@@ -41,6 +41,39 @@ router.get("/district", async function(req, resp) {
   }
 });
 
+router.get("/office", async function(req, resp) {
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(`SELECT * FROM TM_Office;`);
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+router.get("/idtype", async function(req, resp) {
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(`SELECT * FROM T_IDType;`);
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+
 router.get("/region", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
@@ -57,12 +90,12 @@ router.get("/region", async function(req, resp) {
   }
 });
 
-router.get("/commendation", async function(req, resp) {
+router.get("/communicationtype", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
       .then(pool => {
-        return pool.request().query(`SELECT * FROM T_Communication;`);
+        return pool.request().query(`SELECT * FROM TM_CommunicationType;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -72,6 +105,40 @@ router.get("/commendation", async function(req, resp) {
     console.log(e);
   }
 });
+
+router.get("/subcategory", async function(req, resp) {
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(`SELECT * FROM TM_SubCategory;`);
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+router.get("/user", async function(req, resp) {
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(`SELECT * FROM T_User;`);
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+
 
 /* GET users listing. */
 router.get("/", function(req, res, next) {

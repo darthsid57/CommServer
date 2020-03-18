@@ -1,6 +1,6 @@
 var user = "sa";
 var password = "Welcome1";
 var database = "Communications";
-var server = "PROGRAMMERICT";
+var server = "DESKTOP-6DOGOA2\\SIDSERVER";
 
 module.exports = { user, password, server, database };
