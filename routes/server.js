@@ -46,7 +46,9 @@ router.get("/region", async function(req, resp) {
     await new mssql.ConnectionPool(config)
       .connect()
       .then(pool => {
-        return pool.request().query(`SELECT * FROM TM_Region;`);
+        return pool.request()
+          .query(`SELECT  RegionID as 'key', Region as 'text', RegionID AS 'value' FROM TM_Region
+        WHERE IsActive=1;`);
       })
       .then(result => {
         let rows = result.recordset;
