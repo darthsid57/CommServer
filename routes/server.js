@@ -30,23 +30,9 @@ router.get("/district", async function(req, resp) {
     await new mssql.ConnectionPool(config)
       .connect()
       .then(pool => {
-        return pool.request().query(`SELECT * FROM TM_District;`);
-      })
-      .then(result => {
-        let rows = result.recordset;
-        resp.status(200).json(rows);
-      });
-  } catch (e) {
-    console.log(e);
-  }
-});
-
-router.get("/office", async function(req, resp) {
-  try {
-    await new mssql.ConnectionPool(config)
-      .connect()
-      .then(pool => {
-        return pool.request().query(`SELECT * FROM TM_Office;`);
+        return pool.request()
+          .query(`SELECT DistrictID as 'key', DistrictName as 'text', DistrictID AS 'value' FROM TM_District
+        WHERE IsActive=1;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -62,7 +48,9 @@ router.get("/idtype", async function(req, resp) {
     await new mssql.ConnectionPool(config)
       .connect()
       .then(pool => {
-        return pool.request().query(`SELECT * FROM T_IDType;`);
+        return pool.request()
+          .query(`SELECT IDTypeID  as 'key', IDType as 'text', IDTypeID AS 'value' FROM T_IDType
+        WHERE IsActive=1;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -73,7 +61,6 @@ router.get("/idtype", async function(req, resp) {
   }
 });
 
-
 router.get("/region", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
@@ -82,6 +69,24 @@ router.get("/region", async function(req, resp) {
         return pool.request()
           .query(`SELECT  RegionID as 'key', Region as 'text', RegionID AS 'value' FROM TM_Region
         WHERE IsActive=1;`);
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+router.get("/office", async function(req, resp) {
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request()
+          .query(`SELECT  OfficeID as 'key', OfficeName as 'text', OfficeID AS 'value' FROM TM_Office
+            WHERE IsActive=1;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -139,8 +144,6 @@ router.get("/user", async function(req, resp) {
     console.log(e);
   }
 });
-
-
 
 /* GET users listing. */
 router.get("/", function(req, res, next) {
