@@ -149,15 +149,11 @@ router.get("/user", async function(req, resp) {
 
 //SPO update - assign to PO, comment,
 router.post("/grievance", async function(req, resp) {
-  console.log(req.body.requestType);
-  console.log(req.body.requestDescription);
-  console.log(req.body.userId);
-  console.log(req.body.branchId);
-  console.log(req.body.departmentId);
   // var now = new Date();
   // var nowDate = now.toLocaleDateString("en-GB");
   // var nowTime = now.toLocaleTimeString("en-GB");
   // var json_date_created = now.toLocaleString("en-US");
+  console.log(req.body.clientNumber);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
