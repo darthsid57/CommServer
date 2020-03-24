@@ -144,7 +144,9 @@ router.get("/communicationtype", async function(req, resp) {
     await new mssql.ConnectionPool(config)
       .connect()
       .then(pool => {
-        return pool.request().query(`SELECT * FROM TM_CommunicationType;`);
+        return pool.request()
+          .query(`SELECT  CommunicationTypeID as 'key', CommunicationType as 'text', CommunicationTypeID AS 'value' FROM TM_CommunicationType
+        WHERE IsActive=1;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -385,6 +387,120 @@ router.post("/enquiry", async function(req, resp) {
             @dateOfEnquiry,
             @otherDetailsEnquiry,
             @declaration);`
+        );
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      })
+      .catch(err => {
+        resp.status(500).send({ message: `${err}` });
+        console.log(err);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+router.post("/commendation", async function(req, resp) {
+  // var now = new Date();
+  // var nowDate = now.toLocaleDateString("en-GB");
+  // var nowTime = now.toLocaleTimeString("en-GB");
+  // var json_date_created = now.toLocaleString("en-US");
+  console.log(req.body.clientNumber);
+  console.log(req.body.clientName);
+  console.log(req.body.IdNumber);
+  console.log(req.body.phoneContact);
+  console.log(req.body.emailAddress);
+  console.log(req.body.IdType);
+  console.log(req.body.region);
+  console.log(req.body.office);
+  console.log(req.body.dateOfEnquiry);
+  console.log(req.body.otherDetailsEnquiry);
+  console.log(req.body.declaration);
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(
+          `DECLARE
+          @clientNumber bigint,
+          @clientName varchar(50),
+          @IdNumber varchar(50),
+          @phoneContact bigint,
+          @emailAddress varchar(50),
+          @idType int,
+          @region int,
+          @office int,
+          @CustomerDetailID bigint,
+          @CommunicationTypeID int,
+          @CommendationDate date,
+          @StaffName varchar(50),
+          @CommendationReason varchar(50),
+          @OfficeName varchar(50),
+          @OtherDetails varchar(50),
+          @declaration int,
+          @linkToFile varchar(50);
+          
+          set @clientNumber='${req.body.clientNumber}';
+          set @clientName='${req.body.clientName}';
+          set @IdNumber='${req.body.IdNumber}';
+          set @phoneContact='${req.body.phoneContact}';
+          set @emailAddress='${req.body.emailAddress}';
+          set @idType='${req.body.IdType}';
+          set @region='${req.body.region}';
+          set @office='${req.body.office}';
+          set @CommunicationTypeID='2';
+          set @CommendationDate='${req.body.commendationDate}';
+          set @StaffName='${req.body.commendationStaffName}';
+          set @CommendationReason='${req.body.commendationReason}';
+          set @OfficeName='${req.body.commendationOfficeName}';
+          set @OtherDetails='';
+          set @linkToFile ='0';
+          set @declaration='${req.body.declaration}';
+          
+          INSERT INTO 
+          T_CustomerDetail(CustomerNumber,
+            CustomerName,
+            PhoneContact,
+            EmailAddress, 
+            IDNumber, 
+            RegionID,
+            OfficeID, 
+            IDTypeID) 
+          VALUES(
+            @clientNumber, 
+            @clientName, 
+            @phoneContact, 
+            @emailAddress, 
+            @IDNumber, 
+            @region, 
+            @office, 
+            @idType);
+          
+          SET @CustomerDetailID = SCOPE_IDENTITY();
+          
+          
+          INSERT INTO 
+          T_Commendation (CustomerDetailID,
+            CommunicationTypeID,
+            CommendationDate,
+            StaffName,
+			CommendationReason,
+			OfficeName,
+			OtherDetails,
+			declaration,
+			linkToFile)
+          VALUES(
+            @CustomerDetailID,
+            @CommunicationTypeID,
+            @CommendationDate,
+            @StaffName,
+			@CommendationReason,
+			@OfficeName,
+			@OtherDetails,
+			@declaration,
+			@linkToFile);`
         );
       })
       .then(result => {
