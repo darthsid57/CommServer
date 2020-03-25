@@ -114,9 +114,9 @@ router.get("/grievances", async function(req, resp) {
         cd.IDNumber,
         comt.CommunicationType,
         comm.IncidentType,
-        comm.IncidentTime,
+        convert(varchar, comm.IncidentTime, 8) as 'IncidentTime',
         comm.IncidentArea,
-        comm.IncidentDate,
+        convert(varchar, comm.IncidentDate, 5) as 'IncidentDate',
         sc.SubCategory,
         comm.VehicleNumber,
         comm.OtherDetails,
@@ -129,6 +129,79 @@ router.get("/grievances", async function(req, resp) {
         JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
         JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
         JOIN TM_SubCategory sc ON sc.SubCategoryID=comm.SubCategoryID;`);
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+router.get("/commendation", async function(req, resp) {
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(`SELECT 
+        comm.CommendationID,
+        cd.CustomerNumber, 
+        cd.CustomerName, 
+        cd.PhoneContact, 
+        cd.EmailAddress,
+        r.Region,
+        o.OfficeName,
+        idt.IDType,
+        cd.IDNumber,
+        comt.CommunicationType,
+        comm.StaffName,
+        convert(varchar, comm.CommendationDate, 4) as 'CommendationDate',
+        comm.CommendationReason,
+        comm.declaration,
+        comm.linkToFile
+        FROM T_Commendation comm 
+        JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
+        JOIN TM_Region r ON r.RegionID=cd.RegionID
+        JOIN TM_Office o ON o.OfficeID=cd.OfficeID
+        JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
+        JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID;`);
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+router.get("/enquiries", async function(req, resp) {
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(`SELECT 
+        comm.QueryID,
+        cd.CustomerNumber, 
+        cd.CustomerName, 
+        cd.PhoneContact, 
+        cd.EmailAddress,
+        r.Region,
+        o.OfficeName,
+        idt.IDType,
+        cd.IDNumber,
+        comt.CommunicationType,
+        comm.QueryDetails,
+        convert(varchar, comm.QueryDate, 4) as 'QueryDate',
+        comm.declaration,
+        comm.linkToFile
+        FROM T_Query comm 
+        JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
+        JOIN TM_Region r ON r.RegionID=cd.RegionID
+        JOIN TM_Office o ON o.OfficeID=cd.OfficeID
+        JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
+        JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID;`);
       })
       .then(result => {
         let rows = result.recordset;
