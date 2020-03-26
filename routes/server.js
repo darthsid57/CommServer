@@ -1,5 +1,7 @@
 var express = require("express");
 var router = express.Router();
+const path = require("path");
+const multer = require("multer");
 
 var bodyparser = require("body-parser");
 var mssql = require("mssql");
@@ -24,6 +26,21 @@ const config = {
     idleTimeoutMillis: 30000
   }
 };
+
+var fileuniquekey = 0;
+
+const storage = multer.diskStorage({
+  destination: "./public/uploads/",
+  filename: function(req, file, cb) {
+    // cb(null, "IMAGE-" + Date.now() + path.extname(file.originalname));
+    cb(null, "IMAGE-" + fileuniquekey + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1000000 }
+}).single("myImage");
 
 router.get("/district", async function(req, resp) {
   try {
@@ -270,7 +287,9 @@ router.post("/grievance", async function(req, resp) {
   // var nowDate = now.toLocaleDateString("en-GB");
   // var nowTime = now.toLocaleTimeString("en-GB");
   // var json_date_created = now.toLocaleString("en-US");
+
   console.log(req.body.clientNumber);
+  getClientNumber(req.body.clientNumber);
   console.log(req.body.clientName);
   console.log(req.body.IdNumber);
   console.log(req.body.phoneContact);
@@ -329,7 +348,7 @@ set @SubCategoryID = '${req.body.SubCategory}';
 set @VehicleNumber = '${req.body.vehicleNumber}';
 set @DistrictID = '${req.body.region}';
 set @IncidentDate = '${req.body.incidentDate}';
-set @OtherDetails = '${req.body.otherDetails}';
+set @OtherDetails = '"${req.body.otherDetails}"';
 set @declaration = '${req.body.declaration}';
 
 INSERT INTO T_CustomerDetail(CustomerNumber,CustomerName,PhoneContact,EmailAddress, IDNumber, RegionID,OfficeID, IDTypeID) 
@@ -491,6 +510,8 @@ router.post("/commendation", async function(req, resp) {
   console.log(req.body.dateOfEnquiry);
   console.log(req.body.otherDetailsEnquiry);
   console.log(req.body.declaration);
+
+  console.log("fileuniquekey : " + fileuniquekey);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
@@ -529,7 +550,7 @@ router.post("/commendation", async function(req, resp) {
           set @CommendationReason='${req.body.commendationReason}';
           set @OfficeName='${req.body.commendationOfficeName}';
           set @OtherDetails='';
-          set @linkToFile ='0';
+          set @linkToFile ='${fileuniquekey}';
           set @declaration='${req.body.declaration}';
           
           INSERT INTO 
@@ -553,7 +574,6 @@ router.post("/commendation", async function(req, resp) {
           
           SET @CustomerDetailID = SCOPE_IDENTITY();
           
-          
           INSERT INTO 
           T_Commendation (CustomerDetailID,
             CommunicationTypeID,
@@ -573,7 +593,9 @@ router.post("/commendation", async function(req, resp) {
 			@OfficeName,
 			@OtherDetails,
 			@declaration,
-			@linkToFile);`
+      @linkToFile);
+      
+      `
         );
       })
       .then(result => {
@@ -587,7 +609,21 @@ router.post("/commendation", async function(req, resp) {
   } catch (e) {
     console.log(e);
   }
+  fileuniquekey = fileuniquekey + 1;
 });
+
+router.post("/upload", function(req, res) {
+  upload(req, res, function(err) {
+    console.log("Request ---", req.body);
+    console.log("Request file ---", req.file);
+
+    if (!err) return res.send(200).end();
+  });
+});
+
+function getClientNumber(clientNumber) {
+  console.log(clientNumber);
+}
 
 /* GET users listing. */
 router.get("/", function(req, res, next) {
