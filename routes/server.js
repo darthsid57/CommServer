@@ -6,6 +6,8 @@ const multer = require("multer");
 var bodyparser = require("body-parser");
 var mssql = require("mssql");
 var cors = require("cors");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 router.use(cors());
 
@@ -114,6 +116,61 @@ router.get("/office", async function(req, resp) {
   }
 });
 
+//Get isopen Status
+router.get("/status/isopen/:id", async function(req, resp) {
+  console.log(req.params.id);
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool
+          .request()
+          .query(
+            `SELECT tc.isOpen FROM T_Case tc WHERE tc.caseID=${req.params.id}`
+          );
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+//Update Status Open
+router.put("/status/isopen/:id", async function(req, resp) {
+  console.log(req.params.id);
+  console.log(req.body.openedBy);
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(
+          `UPDATE T_Case 
+          SET 
+          isOpen=1,
+          statusID=2,
+          dateopened=CURRENT_TIMESTAMP,
+          openedBy= ${req.body.openedBy}
+          WHERE caseID=${req.params.id};`
+        );
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp
+          .status(200)
+          .send({ message: "Open Status Updated" })
+          .json(rows);
+      })
+      .catch(err => {
+        resp.status(500).send({ message: `${err}` });
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
 router.get("/grievances", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
@@ -138,14 +195,18 @@ router.get("/grievances", async function(req, resp) {
         comm.VehicleNumber,
         comm.OtherDetails,
         comm.declaration,
-        comm.linkToFile
+        comm.linkToFile,
+		comm.caseID,
+		tc.statusID
         FROM T_Communication comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
         JOIN TM_Office o ON o.OfficeID=cd.OfficeID
         JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
         JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
-        JOIN TM_SubCategory sc ON sc.SubCategoryID=comm.SubCategoryID;`);
+        JOIN TM_SubCategory sc ON sc.SubCategoryID=comm.SubCategoryID
+		JOIN T_Case tc ON comm.caseID = tc.caseID
+		JOIN TM_Status ts ON tc.statusID = ts.statusID;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -330,7 +391,9 @@ router.post("/grievance", async function(req, resp) {
 @DistrictID int,
 @IncidentDate date,
 @OtherDetails varchar(50),
-@declaration int;
+@declaration int,
+@caseID INT,
+@current_date_time DATETIME;
 
 SET @clientNumber='${req.body.clientNumber}';
 SET @clientName='${req.body.clientName}';
@@ -351,12 +414,19 @@ set @IncidentDate = '${req.body.incidentDate}';
 set @OtherDetails = '"${req.body.otherDetails}"';
 set @declaration = '${req.body.declaration}';
 
+
 INSERT INTO T_CustomerDetail(CustomerNumber,CustomerName,PhoneContact,EmailAddress, IDNumber, RegionID,OfficeID, IDTypeID) 
 VALUES(@clientNumber, @clientName, @phoneContact, @emailAddress, @IDNumber, @region, @office, @idType );
 
 SET @CustomerDetailID = SCOPE_IDENTITY();
 
 SELECT @CustomerDetailID;
+
+SET @current_date_time =  CURRENT_TIMESTAMP;
+INSERT INTO T_Case(statusID,dateReceived)
+VALUES(1,@current_date_time)
+
+SET @caseID = SCOPE_IDENTITY();
 
 INSERT INTO 
 T_Communication (CustomerDetailID, 
@@ -369,7 +439,8 @@ VehicleNumber,
 DistrictID,
 IncidentDate, 
 OtherDetails,
-declaration) 
+declaration,
+caseID) 
 VALUES(@CustomerDetailID, 
 @CommunicationTypeID,
 @IncidentType, 
@@ -380,7 +451,8 @@ VALUES(@CustomerDetailID,
 @DistrictID, 
 @IncidentDate,
 @OtherDetails,
-@declaration);`
+@declaration,
+@caseID);`
         );
       })
       .then(result => {
@@ -430,7 +502,9 @@ router.post("/enquiry", async function(req, resp) {
           @CommunicationTypeID int,
           @dateOfEnquiry date,
           @otherDetailsEnquiry varchar(50),
-          @declaration int;
+          @declaration int,
+          @caseID INT,
+          @current_date_time DATETIME;
           
           set @clientNumber='${req.body.clientNumber}';
           set @clientName='${req.body.clientName}';
@@ -466,19 +540,26 @@ router.post("/enquiry", async function(req, resp) {
           
           SET @CustomerDetailID = SCOPE_IDENTITY();
           
+          SET @current_date_time =  CURRENT_TIMESTAMP;
+          INSERT INTO T_Case(statusID,dateReceived)
+          VALUES(1,@current_date_time)
+
+          SET @caseID = SCOPE_IDENTITY();
           
           INSERT INTO 
           T_Query (CustomerDetailID,
             CommunicationTypeID,
             QueryDate,
             QueryDetails,
-            declaration)
+            declaration,
+            caseID) 
           VALUES(
             @CustomerDetailID,
             @CommunicationTypeID,
             @dateOfEnquiry,
             @otherDetailsEnquiry,
-            @declaration);`
+            @declaration,
+            @caseID);`
         );
       })
       .then(result => {
@@ -534,7 +615,9 @@ router.post("/commendation", async function(req, resp) {
           @OfficeName varchar(50),
           @OtherDetails varchar(50),
           @declaration int,
-          @linkToFile varchar(50);
+          @linkToFile varchar(50)
+          @caseID INT,
+          @current_date_time DATETIME;
           
           set @clientNumber='${req.body.clientNumber}';
           set @clientName='${req.body.clientName}';
@@ -573,29 +656,36 @@ router.post("/commendation", async function(req, resp) {
             @idType);
           
           SET @CustomerDetailID = SCOPE_IDENTITY();
+
+          SET @current_date_time =  CURRENT_TIMESTAMP;
+          INSERT INTO T_Case(statusID,dateReceived)
+          VALUES(1,@current_date_time)
+
+          SET @caseID = SCOPE_IDENTITY();
           
           INSERT INTO 
           T_Commendation (CustomerDetailID,
             CommunicationTypeID,
             CommendationDate,
             StaffName,
-			CommendationReason,
-			OfficeName,
-			OtherDetails,
-			declaration,
-			linkToFile)
+            CommendationReason,
+            OfficeName,
+            OtherDetails,
+            declaration,
+            linkToFile,
+            caseID) 
           VALUES(
             @CustomerDetailID,
             @CommunicationTypeID,
             @CommendationDate,
             @StaffName,
-			@CommendationReason,
-			@OfficeName,
-			@OtherDetails,
-			@declaration,
-      @linkToFile);
-      
-      `
+            @CommendationReason,
+            @OfficeName,
+            @OtherDetails,
+            @declaration,
+            @linkToFile,
+            @caseID);
+            `
         );
       })
       .then(result => {

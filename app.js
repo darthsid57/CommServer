@@ -9,6 +9,7 @@ var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var server = require("./routes/server");
 var imageFile = require("./routes/imagefile");
+var loginVeification = require('./routes/loginVerification');
 
 var app = express();
 
@@ -27,6 +28,7 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/server", server);
 app.use("/upload", imageFile);
+app.use('/verify', loginVeification);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
