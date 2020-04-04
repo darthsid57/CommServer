@@ -171,6 +171,61 @@ router.put("/status/isopen/:id", async function(req, resp) {
   }
 });
 
+//Get isopen Status
+router.get("/status/isclose/:id", async function(req, resp) {
+  console.log(req.params.id);
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool
+          .request()
+          .query(
+            `SELECT tc.isClosed FROM T_Case tc WHERE tc.caseID=${req.params.id}`
+          );
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+//Update Status Close
+router.put("/status/isclose/:id", async function(req, resp) {
+  console.log(req.params.id);
+  console.log(req.body.closedBy);
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(
+          `UPDATE T_Case 
+          SET 
+          isClosed=1,
+          statusID=4,
+          dateClosed=CURRENT_TIMESTAMP,
+          closedBy= ${req.body.closedBy}
+          WHERE caseID=${req.params.id};`
+        );
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp
+          .status(200)
+          .send({ message: "Close Status Updated" })
+          .json(rows);
+      })
+      .catch(err => {
+        resp.status(500).send({ message: `${err}` });
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
 router.get("/grievances", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
@@ -196,8 +251,8 @@ router.get("/grievances", async function(req, resp) {
         comm.OtherDetails,
         comm.declaration,
         comm.linkToFile,
-		comm.caseID,
-		tc.statusID
+		    comm.caseID,
+		    tc.statusID
         FROM T_Communication comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
@@ -205,8 +260,8 @@ router.get("/grievances", async function(req, resp) {
         JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
         JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
         JOIN TM_SubCategory sc ON sc.SubCategoryID=comm.SubCategoryID
-		JOIN T_Case tc ON comm.caseID = tc.caseID
-		JOIN TM_Status ts ON tc.statusID = ts.statusID;`);
+        JOIN T_Case tc ON comm.caseID = tc.caseID
+        JOIN TM_Status ts ON tc.statusID = ts.statusID;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -237,13 +292,17 @@ router.get("/commendation", async function(req, resp) {
         convert(varchar, comm.CommendationDate, 4) as 'CommendationDate',
         comm.CommendationReason,
         comm.declaration,
-        comm.linkToFile
+        comm.linkToFile,
+        comm.caseID,
+		    tc.statusID
         FROM T_Commendation comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
         JOIN TM_Office o ON o.OfficeID=cd.OfficeID
         JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
-        JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID;`);
+        JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
+        JOIN T_Case tc ON comm.caseID = tc.caseID
+        JOIN TM_Status ts ON tc.statusID = ts.statusID;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -273,13 +332,17 @@ router.get("/enquiries", async function(req, resp) {
         comm.QueryDetails,
         convert(varchar, comm.QueryDate, 4) as 'QueryDate',
         comm.declaration,
-        comm.linkToFile
+        comm.linkToFile,
+        comm.caseID,
+		    tc.statusID
         FROM T_Query comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
         JOIN TM_Office o ON o.OfficeID=cd.OfficeID
         JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
-        JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID;`);
+        JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
+        JOIN T_Case tc ON comm.caseID = tc.caseID
+        JOIN TM_Status ts ON tc.statusID = ts.statusID;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -403,7 +466,7 @@ SET @emailAddress='${req.body.emailAddress}';
 SET @idType = '${req.body.IdType}';
 SET @region = '${req.body.region}';
 SET @office = '${req.body.office}';
-SET @CommunicationTypeID = 3;
+SET @CommunicationTypeID = 1;
 SET @IncidentType = '${req.body.typeofIncident}';
 SET @IncidentTime = '${req.body.timeofIncident}';
 SET @IncidentArea = '${req.body.incidentArea}';
@@ -514,7 +577,7 @@ router.post("/enquiry", async function(req, resp) {
           set @idType='${req.body.IdType}';
           set @region='${req.body.region}';
           set @office='${req.body.office}';
-          set @CommunicationTypeID='1';
+          set @CommunicationTypeID='3';
           set @dateOfEnquiry='${req.body.dateOfEnquiry}';
           set @otherDetailsEnquiry='${req.body.otherDetailsEnquiry}';
           set @declaration='${req.body.declaration}';
@@ -615,7 +678,7 @@ router.post("/commendation", async function(req, resp) {
           @OfficeName varchar(50),
           @OtherDetails varchar(50),
           @declaration int,
-          @linkToFile varchar(50)
+          @linkToFile varchar(50),
           @caseID INT,
           @current_date_time DATETIME;
           
