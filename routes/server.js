@@ -29,20 +29,19 @@ const config = {
   }
 };
 
-var fileuniquekey = 0;
+// const storage = multer.diskStorage({
+//   destination:
+//     "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets",
+//   filename: function(req, file, cb) {
+//     // cb(null, "IMAGE-" + Date.now() + path.extname(file.originalname));
+//     cb(null, "IMAGE-" + fileuniquekey + path.extname(file.originalname));
+//   }
+// });
 
-const storage = multer.diskStorage({
-  destination: "./public/uploads/",
-  filename: function(req, file, cb) {
-    // cb(null, "IMAGE-" + Date.now() + path.extname(file.originalname));
-    cb(null, "IMAGE-" + fileuniquekey + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 1000000 }
-}).single("myImage");
+// const upload = multer({
+//   storage: storage,
+//   limits: { fileSize: 1000000 }
+// }).single("myImage");
 
 router.get("/district", async function(req, resp) {
   try {
@@ -98,6 +97,24 @@ router.get("/region", async function(req, resp) {
   }
 });
 
+router.get("/officers", async function(req, resp) {
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request()
+          .query(`SELECT  [to].officerID as 'key', [to].username as 'text', [to].officerID AS 'value' FROM TM_Officers [to]
+          WHERE IsActive=1;`);
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
 router.get("/office", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
@@ -110,6 +127,60 @@ router.get("/office", async function(req, resp) {
       .then(result => {
         let rows = result.recordset;
         resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+//Get assignedTo
+router.get("/assignedto/:id", async function(req, resp) {
+  console.log(req.params.id);
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool
+          .request()
+          .query(
+            `SELECT tc.assignedTo FROM T_Case tc WHERE tc.caseID=${req.params.id};`
+          );
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp.status(200).json(rows);
+      });
+  } catch (e) {
+    console.log(e);
+  }
+});
+
+//Update assignedTo
+router.put("/assignedto/:id", async function(req, resp) {
+  console.log(req.params.id);
+  console.log(req.body.assignedTo);
+  try {
+    await new mssql.ConnectionPool(config)
+      .connect()
+      .then(pool => {
+        return pool.request().query(
+          `UPDATE T_Case 
+          SET 
+          statusID=3,
+          dateAssigned=CURRENT_TIMESTAMP,
+          assignedTo= ${req.body.assignedTo}
+          WHERE caseID=${req.params.id};`
+        );
+      })
+      .then(result => {
+        let rows = result.recordset;
+        resp
+          .status(200)
+          .send({ message: "Assigned To Updated" })
+          .json(rows);
+      })
+      .catch(err => {
+        resp.status(500).send({ message: `${err}` });
       });
   } catch (e) {
     console.log(e);
@@ -252,7 +323,8 @@ router.get("/grievances", async function(req, resp) {
         comm.declaration,
         comm.linkToFile,
 		    comm.caseID,
-		    tc.statusID
+		    tc.statusID,
+			  [to].username AS 'officerAssigned'
         FROM T_Communication comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
@@ -261,7 +333,8 @@ router.get("/grievances", async function(req, resp) {
         JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
         JOIN TM_SubCategory sc ON sc.SubCategoryID=comm.SubCategoryID
         JOIN T_Case tc ON comm.caseID = tc.caseID
-        JOIN TM_Status ts ON tc.statusID = ts.statusID;`);
+        JOIN TM_Status ts ON tc.statusID = ts.statusID
+        LEFT JOIN TM_Officers [to] ON tc.assignedTo = [to].officerID;`);
       })
       .then(result => {
         let rows = result.recordset;
@@ -483,7 +556,7 @@ VALUES(@clientNumber, @clientName, @phoneContact, @emailAddress, @IDNumber, @reg
 
 SET @CustomerDetailID = SCOPE_IDENTITY();
 
-SELECT @CustomerDetailID;
+SELECT @CustomerDetailID as 'customerDetailID';
 
 SET @current_date_time =  CURRENT_TIMESTAMP;
 INSERT INTO T_Case(statusID,dateReceived)
@@ -520,7 +593,8 @@ VALUES(@CustomerDetailID,
       })
       .then(result => {
         let rows = result.recordset;
-        resp.status(200).json(rows);
+        console.log(result);
+        resp.status(200).json(result.recordset);
       })
       .catch(err => {
         resp.status(500).send({ message: `${err}` });
@@ -765,12 +839,71 @@ router.post("/commendation", async function(req, resp) {
   fileuniquekey = fileuniquekey + 1;
 });
 
-router.post("/upload", function(req, res) {
+router.post("/upload/:id", function(req, res) {
+  // console.log(" params id " + req.params.id);
+
+  // const storage = multer.diskStorage({
+  //   destination:
+  //     "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets",
+  //   filename: function(req, file, cb) {
+  //     // cb(null, "IMAGE-" + Date.now() + path.extname(file.originalname));
+  //     cb(null, req.params.id + path.extname(file.originalname));
+  //   }
+  // });
+
+  // const upload = multer({
+  //   storage: storage,
+  //   limits: { fileSize: 1000000 }
+  // }).single("myImage");
+
+  // upload(req, res, function(err) {
+  //   console.log("Request ---", req.body);
+  //   console.log("Request file ---", req.file);
+
+  //   if (!err) return res.sendStatus(200).end();
+  // });
+
+  console.log(" params id " + req.params.id);
+
+  const DIR =
+    "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets";
+
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, DIR);
+    },
+    filename: function(req, file, cb) {
+      // cb(null, "IMAGE-" + Date.now() + path.extname(file.originalname));
+      cb(null, req.params.id + path.extname(file.originalname));
+    }
+  });
+
+  var upload = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+      if (
+        file.mimetype == "image/png" ||
+        file.mimetype == "image/jpg" ||
+        file.mimetype == "image/jpeg"
+      ) {
+        cb(null, true);
+      } else {
+        cb(null, false);
+        return cb(new Error("Only .png, .jpg and .jpeg format allowed!"));
+      }
+    }
+  }).single("myImage");
+
+  // const upload = multer({
+  //   storage: storage,
+  //   limits: { fileSize: 1000000 }
+  // }).single("myImage");
+
   upload(req, res, function(err) {
     console.log("Request ---", req.body);
     console.log("Request file ---", req.file);
 
-    if (!err) return res.send(200).end();
+    if (!err) return res.sendStatus(200).end();
   });
 });
 

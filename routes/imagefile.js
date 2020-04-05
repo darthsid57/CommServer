@@ -1,35 +1,50 @@
-const path = require("path");
-const multer = require("multer");
 var express = require("express");
-const router = express.Router();
-var bodyparser = require("body-parser");
-var mssql = require("mssql");
-var cors = require("cors");
+var router = express();
+var fs = require("fs");
 
-router.use(cors());
+// console.log(__dirname);
 
-router.use(bodyparser.json());
-router.use(bodyparser.urlencoded({ extended: false }));
+// app.use("/cssFiles", express.static(__dirname + "/assets"));
 
-const storage = multer.diskStorage({
-  destination: "./public/uploads/",
-  filename: function(req, file, cb) {
-    cb(null, "IMAGE-" + Date.now() + path.extname(file.originalname));
-  }
-});
+/* GET users listing. */
+router.get("/images/test.jpg", function(req, res, next) {
+  // res.sendFile( __dirname + "/assets/test.jpg");
+  // res.sendFile(
+  //   "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/test.jpg"
+  // );
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 1000000 }
-}).single("myImage");
+  // res.sendFile(`C:/Users/Siddhant/Music/${req.params.id}.jpg`);
 
-router.post("/upload", function(req, res) {
-  upload(req, res, function(err) {
-    console.log("Request ---", req.body);
-    console.log("Request file ---", req.file);
+  var value = 10085;
+  // const directoryPath =
+  //   "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets";
 
-    if (!err) return res.send(200).end();
-  });
+  // fs.readdir(directoryPath, function(err, files) {
+  //   if (err) {
+  //     return console.log("Unable to Scan Directory: " + err);
+  //   }
+
+  //   for (let i = 0; i < files.length; i++) {
+  //     if (files[i] == value) {
+  //       console.log(files[i]);
+  //     }
+  //   }
+
+  //   // //listing all files using forEach
+  //   // files.forEach(function(file) {
+  //   //   console.log(file);
+  //   // });
+  // });
+
+  res.sendFile(
+    `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${value}.png`
+  );
+  // res.sendFile(
+  //   `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${value}.jpg`
+  // );
+  // res.sendFile(
+  //   `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${value}.jpeg`
+  // );
 });
 
 module.exports = router;
