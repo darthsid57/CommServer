@@ -7,7 +7,7 @@ var fs = require("fs");
 // app.use("/cssFiles", express.static(__dirname + "/assets"));
 
 /* GET users listing. */
-router.get("/images/test.jpg", function(req, res, next) {
+router.get("/images/:customerDetailID", function (req, res, next) {
   // res.sendFile( __dirname + "/assets/test.jpg");
   // res.sendFile(
   //   "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/test.jpg"
@@ -15,7 +15,7 @@ router.get("/images/test.jpg", function(req, res, next) {
 
   // res.sendFile(`C:/Users/Siddhant/Music/${req.params.id}.jpg`);
 
-  var value = 10085;
+  var value = req.params.id;
   // const directoryPath =
   //   "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets";
 
@@ -36,12 +36,12 @@ router.get("/images/test.jpg", function(req, res, next) {
   //   // });
   // });
 
-  res.sendFile(
-    `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${value}.png`
-  );
   // res.sendFile(
-  //   `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${value}.jpg`
+  //   `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${value}.png`
   // );
+  res.sendFile(
+    `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${value}.jpg`
+  );
   // res.sendFile(
   //   `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${value}.jpeg`
   // );

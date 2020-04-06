@@ -27,16 +27,90 @@ const config = {
   pool: {
     max: 100,
     min: 0,
-    idleTimeoutMillis: 30000
-  }
+    idleTimeoutMillis: 30000,
+  },
 };
 
-router.get("/", function(req, res, next) {
+router.get("/", function (req, res, next) {
   res.send("loginVerification");
 });
 
+router.get("/user/getTokenData", verifyToken, function (req, resp) {
+  jwt.verify(req.token, "SuperSecRetKey", (err, authData) => {
+    if (err) {
+      resp.sendStatus(403);
+    } else {
+      mssql.connect(config, function (error) {
+        if (error) {
+          console.log(error);
+          mssql.close();
+        } else {
+          console.log("Connection with Database Established : Get Token Data ");
+          var request = new mssql.Request();
+          resp.json({ authdata: authData.rows.recordset });
+          //   resp.json({ recordset: recordset.recordset });
+          mssql.close();
+        }
+      });
+    }
+  });
+});
+
+//User signin route - create a token and return to user
+router.post("/api/signin", (req, resp) => {
+  mssql.connect(config, function (error) {
+    if (error) {
+      console.log(error);
+      mssql.close();
+    } else {
+      console.log("Connected!");
+      var request = new mssql.Request();
+
+      request.query(
+        `SELECT
+        tu.username
+         ,tu.UserID
+         ,tu.password
+      FROM T_User tu
+      WHERE tu.username = '${req.body.username}'`,
+        function (error, rows) {
+          const userPassword = rows.recordset.map((x) => x.password);
+
+          //console.log(userPassword.toLocaleString());
+          bcrypt.compare(
+            req.body.password,
+            userPassword.toLocaleString(),
+            function (err, result) {
+              if (result == true) {
+                console.log("Passed");
+                if (error) {
+                  console.log(error);
+                  mssql.close();
+                } else {
+                  jwt.sign(
+                    { rows },
+                    "SuperSecRetKey",
+                    { expiresIn: 60 * 60 },
+                    (err, token) => {
+                      resp.json({ token });
+                      mssql.close();
+                    }
+                  );
+                }
+              } else {
+                resp.send({ data: "Incorrect Password", status: 500 });
+                mssql.close();
+              }
+            }
+          );
+        }
+      );
+    }
+  });
+});
+
 // Get Decoded Token
-router.post("/api/token", verifyToken, function(req, resp) {
+router.post("/api/token", verifyToken, function (req, resp) {
   jwt.verify(req.token, "SuperSecRetKey", (err, authData) => {
     if (err) {
       resp.sendStatus(403);
@@ -49,11 +123,8 @@ router.post("/api/token", verifyToken, function(req, resp) {
 //ADMINISTRATION
 //POST: Create User
 // Insert User
-router.post("/user", function(req, resp) {
-  //
-
-  var hashData = "";
-  mssql.connect(config, function(error) {
+router.post("/user", function (req, resp) {
+  mssql.connect(config, function (error) {
     if (error) {
       console.log(error);
       mssql.close();
@@ -61,20 +132,19 @@ router.post("/user", function(req, resp) {
       console.log("Connected!");
       var request = new mssql.Request();
 
-      bcrypt.hash("req.body.password", saltRounds, function(err, hash) {
+      bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
         console.log(req.body.username);
         console.log(hash);
-        hashData = hash;
         request.query(
           `INSERT INTO T_User (
-                      Username,
-                      Userpassword,
+                      username,
+                      password,
                       IsActive)
                       VALUES (
                       '${req.body.username}',
                       '${hash}',
-                      1);`,
-          function(error, rows, fields) {
+                      '1');`,
+          function (error, rows, fields) {
             if (error) {
               console.log(error);
               mssql.close();

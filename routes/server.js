@@ -25,8 +25,8 @@ const config = {
   pool: {
     max: 100,
     min: 0,
-    idleTimeoutMillis: 30000
-  }
+    idleTimeoutMillis: 30000,
+  },
 };
 
 // const storage = multer.diskStorage({
@@ -43,16 +43,16 @@ const config = {
 //   limits: { fileSize: 1000000 }
 // }).single("myImage");
 
-router.get("/district", async function(req, resp) {
+router.get("/district", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request()
           .query(`SELECT DistrictID as 'key', DistrictName as 'text', DistrictID AS 'value' FROM TM_District
         WHERE IsActive=1;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -61,16 +61,16 @@ router.get("/district", async function(req, resp) {
   }
 });
 
-router.get("/idtype", async function(req, resp) {
+router.get("/idtype", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request()
           .query(`SELECT IDTypeID  as 'key', IDType as 'text', IDTypeID AS 'value' FROM T_IDType
         WHERE IsActive=1;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -79,16 +79,16 @@ router.get("/idtype", async function(req, resp) {
   }
 });
 
-router.get("/region", async function(req, resp) {
+router.get("/region", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request()
           .query(`SELECT  RegionID as 'key', Region as 'text', RegionID AS 'value' FROM TM_Region
         WHERE IsActive=1;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -97,16 +97,16 @@ router.get("/region", async function(req, resp) {
   }
 });
 
-router.get("/officers", async function(req, resp) {
+router.get("/officers", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request()
           .query(`SELECT  [to].officerID as 'key', [to].username as 'text', [to].officerID AS 'value' FROM TM_Officers [to]
           WHERE IsActive=1;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -115,16 +115,16 @@ router.get("/officers", async function(req, resp) {
   }
 });
 
-router.get("/office", async function(req, resp) {
+router.get("/office", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request()
           .query(`SELECT  OfficeID as 'key', OfficeName as 'text', OfficeID AS 'value' FROM TM_Office
             WHERE IsActive=1;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -134,19 +134,19 @@ router.get("/office", async function(req, resp) {
 });
 
 //Get assignedTo
-router.get("/assignedto/:id", async function(req, resp) {
+router.get("/assignedto/:id", async function (req, resp) {
   console.log(req.params.id);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool
           .request()
           .query(
             `SELECT tc.assignedTo FROM T_Case tc WHERE tc.caseID=${req.params.id};`
           );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -156,13 +156,13 @@ router.get("/assignedto/:id", async function(req, resp) {
 });
 
 //Update assignedTo
-router.put("/assignedto/:id", async function(req, resp) {
+router.put("/assignedto/:id", async function (req, resp) {
   console.log(req.params.id);
   console.log(req.body.assignedTo);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(
           `UPDATE T_Case 
           SET 
@@ -172,14 +172,11 @@ router.put("/assignedto/:id", async function(req, resp) {
           WHERE caseID=${req.params.id};`
         );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
-        resp
-          .status(200)
-          .send({ message: "Assigned To Updated" })
-          .json(rows);
+        resp.status(200).send({ message: "Assigned To Updated" }).json(rows);
       })
-      .catch(err => {
+      .catch((err) => {
         resp.status(500).send({ message: `${err}` });
       });
   } catch (e) {
@@ -188,19 +185,19 @@ router.put("/assignedto/:id", async function(req, resp) {
 });
 
 //Get isopen Status
-router.get("/status/isopen/:id", async function(req, resp) {
+router.get("/status/isopen/:id", async function (req, resp) {
   console.log(req.params.id);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool
           .request()
           .query(
             `SELECT tc.isOpen FROM T_Case tc WHERE tc.caseID=${req.params.id}`
           );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -210,13 +207,13 @@ router.get("/status/isopen/:id", async function(req, resp) {
 });
 
 //Update Status Open
-router.put("/status/isopen/:id", async function(req, resp) {
+router.put("/status/isopen/:id", async function (req, resp) {
   console.log(req.params.id);
   console.log(req.body.openedBy);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(
           `UPDATE T_Case 
           SET 
@@ -227,14 +224,11 @@ router.put("/status/isopen/:id", async function(req, resp) {
           WHERE caseID=${req.params.id};`
         );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
-        resp
-          .status(200)
-          .send({ message: "Open Status Updated" })
-          .json(rows);
+        resp.status(200).send({ message: "Open Status Updated" }).json(rows);
       })
-      .catch(err => {
+      .catch((err) => {
         resp.status(500).send({ message: `${err}` });
       });
   } catch (e) {
@@ -243,19 +237,19 @@ router.put("/status/isopen/:id", async function(req, resp) {
 });
 
 //Get isopen Status
-router.get("/status/isclose/:id", async function(req, resp) {
+router.get("/status/isclose/:id", async function (req, resp) {
   console.log(req.params.id);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool
           .request()
           .query(
             `SELECT tc.isClosed FROM T_Case tc WHERE tc.caseID=${req.params.id}`
           );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -265,13 +259,13 @@ router.get("/status/isclose/:id", async function(req, resp) {
 });
 
 //Update Status Close
-router.put("/status/isclose/:id", async function(req, resp) {
+router.put("/status/isclose/:id", async function (req, resp) {
   console.log(req.params.id);
   console.log(req.body.closedBy);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(
           `UPDATE T_Case 
           SET 
@@ -282,14 +276,11 @@ router.put("/status/isclose/:id", async function(req, resp) {
           WHERE caseID=${req.params.id};`
         );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
-        resp
-          .status(200)
-          .send({ message: "Close Status Updated" })
-          .json(rows);
+        resp.status(200).send({ message: "Close Status Updated" }).json(rows);
       })
-      .catch(err => {
+      .catch((err) => {
         resp.status(500).send({ message: `${err}` });
       });
   } catch (e) {
@@ -297,11 +288,11 @@ router.put("/status/isclose/:id", async function(req, resp) {
   }
 });
 
-router.get("/grievances", async function(req, resp) {
+router.get("/grievances", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(`SELECT 
         comm.CommunicationID,
         cd.CustomerNumber, 
@@ -324,7 +315,8 @@ router.get("/grievances", async function(req, resp) {
         comm.linkToFile,
 		    comm.caseID,
 		    tc.statusID,
-			  [to].username AS 'officerAssigned'
+        [to].username AS 'officerAssigned',
+        cd.CustomerDetailID
         FROM T_Communication comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
@@ -336,7 +328,7 @@ router.get("/grievances", async function(req, resp) {
         JOIN TM_Status ts ON tc.statusID = ts.statusID
         LEFT JOIN TM_Officers [to] ON tc.assignedTo = [to].officerID;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -345,11 +337,11 @@ router.get("/grievances", async function(req, resp) {
   }
 });
 
-router.get("/commendation", async function(req, resp) {
+router.get("/commendation", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(`SELECT 
         comm.CommendationID,
         cd.CustomerNumber, 
@@ -367,7 +359,8 @@ router.get("/commendation", async function(req, resp) {
         comm.declaration,
         comm.linkToFile,
         comm.caseID,
-		    tc.statusID
+		    tc.statusID,
+			  [to].username AS 'officerAssigned'
         FROM T_Commendation comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
@@ -375,9 +368,10 @@ router.get("/commendation", async function(req, resp) {
         JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
         JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
         JOIN T_Case tc ON comm.caseID = tc.caseID
-        JOIN TM_Status ts ON tc.statusID = ts.statusID;`);
+        JOIN TM_Status ts ON tc.statusID = ts.statusID
+		    LEFT JOIN TM_Officers [to] ON tc.assignedTo = [to].officerID;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -386,11 +380,11 @@ router.get("/commendation", async function(req, resp) {
   }
 });
 
-router.get("/enquiries", async function(req, resp) {
+router.get("/enquiries", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(`SELECT 
         comm.QueryID,
         cd.CustomerNumber, 
@@ -407,7 +401,8 @@ router.get("/enquiries", async function(req, resp) {
         comm.declaration,
         comm.linkToFile,
         comm.caseID,
-		    tc.statusID
+		    tc.statusID,
+			[to].username AS 'officerAssigned'
         FROM T_Query comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
@@ -415,9 +410,10 @@ router.get("/enquiries", async function(req, resp) {
         JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
         JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
         JOIN T_Case tc ON comm.caseID = tc.caseID
-        JOIN TM_Status ts ON tc.statusID = ts.statusID;`);
+        JOIN TM_Status ts ON tc.statusID = ts.statusID
+		LEFT JOIN TM_Officers [to] ON tc.assignedTo = [to].officerID;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -426,16 +422,16 @@ router.get("/enquiries", async function(req, resp) {
   }
 });
 
-router.get("/communicationtype", async function(req, resp) {
+router.get("/communicationtype", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request()
           .query(`SELECT  CommunicationTypeID as 'key', CommunicationType as 'text', CommunicationTypeID AS 'value' FROM TM_CommunicationType
         WHERE IsActive=1;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -444,16 +440,16 @@ router.get("/communicationtype", async function(req, resp) {
   }
 });
 
-router.get("/subcategory", async function(req, resp) {
+router.get("/subcategory", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request()
           .query(`SELECT  SubCategoryID as 'key', SubCategory as 'text', SubCategoryID AS 'value' FROM TM_SubCategory
         WHERE IsActive=1;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -462,14 +458,14 @@ router.get("/subcategory", async function(req, resp) {
   }
 });
 
-router.get("/user", async function(req, resp) {
+router.get("/user", async function (req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(`SELECT * FROM T_User;`);
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       });
@@ -479,7 +475,7 @@ router.get("/user", async function(req, resp) {
 });
 
 //SPO update - assign to PO, comment,
-router.post("/grievance", async function(req, resp) {
+router.post("/grievance", async function (req, resp) {
   // var now = new Date();
   // var nowDate = now.toLocaleDateString("en-GB");
   // var nowTime = now.toLocaleTimeString("en-GB");
@@ -506,7 +502,7 @@ router.post("/grievance", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(
           `DECLARE 
 @clientNumber bigint,
@@ -591,12 +587,12 @@ VALUES(@CustomerDetailID,
 @caseID);`
         );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         console.log(result);
         resp.status(200).json(result.recordset);
       })
-      .catch(err => {
+      .catch((err) => {
         resp.status(500).send({ message: `${err}` });
         console.log(err);
       });
@@ -605,7 +601,7 @@ VALUES(@CustomerDetailID,
   }
 });
 
-router.post("/enquiry", async function(req, resp) {
+router.post("/enquiry", async function (req, resp) {
   // var now = new Date();
   // var nowDate = now.toLocaleDateString("en-GB");
   // var nowTime = now.toLocaleTimeString("en-GB");
@@ -624,7 +620,7 @@ router.post("/enquiry", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(
           `DECLARE
           @clientNumber bigint,
@@ -699,11 +695,11 @@ router.post("/enquiry", async function(req, resp) {
             @caseID);`
         );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       })
-      .catch(err => {
+      .catch((err) => {
         resp.status(500).send({ message: `${err}` });
         console.log(err);
       });
@@ -712,7 +708,7 @@ router.post("/enquiry", async function(req, resp) {
   }
 });
 
-router.post("/commendation", async function(req, resp) {
+router.post("/commendation", async function (req, resp) {
   // var now = new Date();
   // var nowDate = now.toLocaleDateString("en-GB");
   // var nowTime = now.toLocaleTimeString("en-GB");
@@ -733,7 +729,7 @@ router.post("/commendation", async function(req, resp) {
   try {
     await new mssql.ConnectionPool(config)
       .connect()
-      .then(pool => {
+      .then((pool) => {
         return pool.request().query(
           `DECLARE
           @clientNumber bigint,
@@ -825,11 +821,11 @@ router.post("/commendation", async function(req, resp) {
             `
         );
       })
-      .then(result => {
+      .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
       })
-      .catch(err => {
+      .catch((err) => {
         resp.status(500).send({ message: `${err}` });
         console.log(err);
       });
@@ -839,7 +835,7 @@ router.post("/commendation", async function(req, resp) {
   fileuniquekey = fileuniquekey + 1;
 });
 
-router.post("/upload/:id", function(req, res) {
+router.post("/upload/:id", function (req, res) {
   // console.log(" params id " + req.params.id);
 
   // const storage = multer.diskStorage({
@@ -872,10 +868,10 @@ router.post("/upload/:id", function(req, res) {
     destination: (req, file, cb) => {
       cb(null, DIR);
     },
-    filename: function(req, file, cb) {
+    filename: function (req, file, cb) {
       // cb(null, "IMAGE-" + Date.now() + path.extname(file.originalname));
       cb(null, req.params.id + path.extname(file.originalname));
-    }
+    },
   });
 
   var upload = multer({
@@ -891,7 +887,7 @@ router.post("/upload/:id", function(req, res) {
         cb(null, false);
         return cb(new Error("Only .png, .jpg and .jpeg format allowed!"));
       }
-    }
+    },
   }).single("myImage");
 
   // const upload = multer({
@@ -899,7 +895,7 @@ router.post("/upload/:id", function(req, res) {
   //   limits: { fileSize: 1000000 }
   // }).single("myImage");
 
-  upload(req, res, function(err) {
+  upload(req, res, function (err) {
     console.log("Request ---", req.body);
     console.log("Request file ---", req.file);
 
@@ -912,7 +908,7 @@ function getClientNumber(clientNumber) {
 }
 
 /* GET users listing. */
-router.get("/", function(req, res, next) {
+router.get("/", function (req, res, next) {
   res.send("server active");
 });
 
