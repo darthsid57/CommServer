@@ -293,40 +293,61 @@ router.get("/grievances", async function (req, resp) {
     await new mssql.ConnectionPool(config)
       .connect()
       .then((pool) => {
-        return pool.request().query(`SELECT 
-        comm.CommunicationID,
-        cd.CustomerNumber, 
-        cd.CustomerName, 
-        cd.PhoneContact, 
-        cd.EmailAddress,
-        r.Region,
-        o.OfficeName,
-        idt.IDType,
-        cd.IDNumber,
-        comt.CommunicationType,
-        comm.IncidentType,
-        convert(varchar, comm.IncidentTime, 8) as 'IncidentTime',
-        comm.IncidentArea,
-        convert(varchar, comm.IncidentDate, 5) as 'IncidentDate',
-        sc.SubCategory,
-        comm.VehicleNumber,
-        comm.OtherDetails,
-        comm.declaration,
-        comm.linkToFile,
-		    comm.caseID,
-		    tc.statusID,
-        [to].username AS 'officerAssigned',
-        cd.CustomerDetailID
-        FROM T_Communication comm 
-        JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
-        JOIN TM_Region r ON r.RegionID=cd.RegionID
-        JOIN TM_Office o ON o.OfficeID=cd.OfficeID
-        JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
-        JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
-        JOIN TM_SubCategory sc ON sc.SubCategoryID=comm.SubCategoryID
-        JOIN T_Case tc ON comm.caseID = tc.caseID
-        JOIN TM_Status ts ON tc.statusID = ts.statusID
-        LEFT JOIN TM_Officers [to] ON tc.assignedTo = [to].officerID;`);
+        return pool.request().query(`SELECT
+        comm.CommunicationID
+         ,cd.CustomerNumber
+         ,cd.CustomerName
+         ,cd.PhoneContact
+         ,cd.EmailAddress
+         ,r.Region
+         ,o.OfficeName
+         ,idt.IDType
+         ,cd.IDNumber
+         ,comt.CommunicationType
+         ,comm.IncidentType
+         ,CONVERT(VARCHAR, comm.IncidentTime, 8) AS 'IncidentTime'
+         ,comm.IncidentArea
+         ,CONVERT(VARCHAR, comm.IncidentDate, 5) AS 'IncidentDate'
+         ,sc.SubCategory
+         ,comm.VehicleNumber
+         ,comm.OtherDetails
+         ,comm.declaration
+         ,comm.linkToFile
+         ,comm.caseID
+         ,tc.statusID
+         ,[to].username AS 'officerAssigned'
+         ,cd.CustomerDetailID
+         ,CONVERT(VARCHAR, tc.dateReceived, 5) AS 'dateReceived'
+         ,CONVERT(VARCHAR, tc.dateopened, 5) AS 'dateopened'
+         ,CONVERT(VARCHAR, tc.dateAssigned, 5) AS 'dateAssigned'
+         ,CONVERT(VARCHAR, tc.dateClosed, 5) AS 'dateClosed'
+         ,tc.assignedTo
+         ,tc.receivedBy
+         ,tu.username AS 'openedBy'
+         ,tu1.username AS 'closedBy'
+      FROM T_Communication comm
+      JOIN T_CustomerDetail cd
+        ON cd.CustomerDetailID = comm.CustomerDetailID
+      JOIN TM_Region r
+        ON r.RegionID = cd.RegionID
+      JOIN TM_Office o
+        ON o.OfficeID = cd.OfficeID
+      JOIN T_IDType idt
+        ON idt.IDTypeID = cd.IDTypeID
+      JOIN TM_CommunicationType comt
+        ON comt.CommunicationTypeID = comm.CommunicationTypeID
+      JOIN TM_SubCategory sc
+        ON sc.SubCategoryID = comm.SubCategoryID
+      JOIN T_Case tc
+        ON comm.caseID = tc.caseID
+      JOIN TM_Status ts
+        ON tc.statusID = ts.statusID
+      LEFT JOIN TM_Officers [to]
+        ON tc.assignedTo = [to].officerID
+      LEFT JOIN T_User tu
+        ON tc.openedBy = tu.UserID
+      LEFT JOIN T_User tu1
+        ON tc.closedBy = tu1.UserID;`);
       })
       .then((result) => {
         let rows = result.recordset;
@@ -342,34 +363,55 @@ router.get("/commendation", async function (req, resp) {
     await new mssql.ConnectionPool(config)
       .connect()
       .then((pool) => {
-        return pool.request().query(`SELECT 
-        comm.CommendationID,
-        cd.CustomerNumber, 
-        cd.CustomerName, 
-        cd.PhoneContact, 
-        cd.EmailAddress,
-        r.Region,
-        o.OfficeName,
-        idt.IDType,
-        cd.IDNumber,
-        comt.CommunicationType,
-        comm.StaffName,
-        convert(varchar, comm.CommendationDate, 4) as 'CommendationDate',
-        comm.CommendationReason,
-        comm.declaration,
-        comm.linkToFile,
-        comm.caseID,
-		    tc.statusID,
-			  [to].username AS 'officerAssigned'
-        FROM T_Commendation comm 
-        JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
-        JOIN TM_Region r ON r.RegionID=cd.RegionID
-        JOIN TM_Office o ON o.OfficeID=cd.OfficeID
-        JOIN T_IDType idt ON idt.IDTypeID=cd.IDTypeID
-        JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
-        JOIN T_Case tc ON comm.caseID = tc.caseID
-        JOIN TM_Status ts ON tc.statusID = ts.statusID
-		    LEFT JOIN TM_Officers [to] ON tc.assignedTo = [to].officerID;`);
+        return pool.request().query(`SELECT
+        comm.CommendationID
+         ,cd.CustomerNumber
+         ,cd.CustomerName
+         ,cd.PhoneContact
+         ,cd.EmailAddress
+         ,r.Region
+         ,o.OfficeName
+         ,idt.IDType
+         ,cd.IDNumber
+         ,comt.CommunicationType
+         ,comm.StaffName
+         ,CONVERT(VARCHAR, comm.CommendationDate, 4) AS 'CommendationDate'
+         ,comm.CommendationReason
+         ,comm.declaration
+         ,comm.linkToFile
+         ,comm.caseID
+         ,tc.statusID
+         ,[to].username AS 'officerAssigned'
+         ,CONVERT(VARCHAR, tc.dateReceived, 5) AS 'dateReceived'
+         ,CONVERT(VARCHAR, tc.dateopened, 5) AS 'dateopened'
+         ,CONVERT(VARCHAR, tc.dateAssigned, 5) AS 'dateAssigned'
+         ,CONVERT(VARCHAR, tc.dateClosed, 5) AS 'dateClosed'
+         ,tc.assignedTo
+         ,tc.receivedBy
+         ,tu.username AS 'openedBy'
+         ,tu1.username AS 'closedBy'
+         ,cd.CustomerDetailID
+      FROM T_Commendation comm
+      JOIN T_CustomerDetail cd
+        ON cd.CustomerDetailID = comm.CustomerDetailID
+      JOIN TM_Region r
+        ON r.RegionID = cd.RegionID
+      JOIN TM_Office o
+        ON o.OfficeID = cd.OfficeID
+      JOIN T_IDType idt
+        ON idt.IDTypeID = cd.IDTypeID
+      JOIN TM_CommunicationType comt
+        ON comt.CommunicationTypeID = comm.CommunicationTypeID
+      JOIN T_Case tc
+        ON comm.caseID = tc.caseID
+      JOIN TM_Status ts
+        ON tc.statusID = ts.statusID
+      LEFT JOIN TM_Officers [to]
+        ON tc.assignedTo = [to].officerID
+      LEFT JOIN T_User tu
+        ON tc.openedBy = tu.UserID
+      LEFT JOIN T_User tu1
+        ON tc.closedBy = tu1.UserID;`);
       })
       .then((result) => {
         let rows = result.recordset;
@@ -402,7 +444,8 @@ router.get("/enquiries", async function (req, resp) {
         comm.linkToFile,
         comm.caseID,
 		    tc.statusID,
-			[to].username AS 'officerAssigned'
+      [to].username AS 'officerAssigned'
+      ,cd.CustomerDetailID
         FROM T_Query comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
         JOIN TM_Region r ON r.RegionID=cd.RegionID
