@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const path = require("path");
 const multer = require("multer");
+var nodemailer = require("nodemailer");
 
 var bodyparser = require("body-parser");
 var mssql = require("mssql");
@@ -29,6 +30,13 @@ const config = {
   },
 };
 
+let transporter = nodemailer.createTransport({
+  host: "10.2.117.86",
+  port: 25,
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
 // const storage = multer.diskStorage({
 //   destination:
 //     "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets",
@@ -42,6 +50,79 @@ const config = {
 //   storage: storage,
 //   limits: { fileSize: 1000000 }
 // }).single("myImage");
+
+function mail(email) {
+  let mailOptions = {
+    from: '" Properties Request App " <ict-application-alerts@lta.com.fj> ',
+    to: email, // list of receivers
+    subject: "Request ID : " + email, // Subject line
+    //text: "Comment : " + POcomment // plain text body
+    html: `<!DOCTYPE html>
+      <html>
+      <head>
+      <style>
+      table {
+          font-family: arial, sans-serif;
+          border-collapse: collapse;
+          width: 100%;
+      }
+
+      td, th {
+          border: 1px solid #dddddd;
+          text-align: left;
+          padding: 8px;
+      }
+
+      tr:nth-child(even) {
+          background-color: #dddddd;
+      }
+      </style>
+      </head>
+      <body>
+    <table>
+    <caption> <h2> Saved By Properties Officer </h2> </caption>
+    <tr>
+      <td>Request ID : </td>
+      <td>${email}</td>
+    </tr>
+    <tr>
+      <td>Request Type : </td>
+      <td>${email}</td>
+    </tr>
+    <tr>
+      <td>Branch : </td>
+      <td>${email}</td>
+    </tr>
+    <tr>
+      <td>Department </td>
+      <td>${email}</td>
+    </tr>
+    <tr>
+      <td>Team Leader : </td>
+      <td>${email}</td>
+    </tr>
+    <tr>
+      <td>Description : </td>
+      <td>${email}</td>
+      </tr>
+      <tr>
+      <td>Verification : </td>
+      <td>${email}</td>
+      </tr>
+    </table>
+      <p> Kindly access Properties Request App to action</p>
+    </body>
+    </html>`, // html body
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.log(error);
+    }
+    console.log("Message sent: %s", info.messageId);
+    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+  });
+}
 
 router.get("/district", async function (req, resp) {
   try {
@@ -548,7 +629,7 @@ router.post("/grievance", async function (req, resp) {
       .then((pool) => {
         return pool.request().query(
           `DECLARE 
-@clientNumber bigint,
+@clientNumber varchar(50),
 @clientName varchar(50),
 @IdNumber varchar(50),
 @phoneContact bigint,
@@ -634,6 +715,7 @@ VALUES(@CustomerDetailID,
         let rows = result.recordset;
         console.log(result);
         resp.status(200).json(result.recordset);
+        mail(req.body.emailAddress);
       })
       .catch((err) => {
         resp.status(500).send({ message: `${err}` });
@@ -666,7 +748,7 @@ router.post("/enquiry", async function (req, resp) {
       .then((pool) => {
         return pool.request().query(
           `DECLARE
-          @clientNumber bigint,
+          @clientNumber varchar(50),
           @clientName varchar(50),
           @IdNumber varchar(50),
           @phoneContact bigint,
@@ -715,6 +797,8 @@ router.post("/enquiry", async function (req, resp) {
             @idType);
           
           SET @CustomerDetailID = SCOPE_IDENTITY();
+
+          SELECT @CustomerDetailID as 'customerDetailID';
           
           SET @current_date_time =  CURRENT_TIMESTAMP;
           INSERT INTO T_Case(statusID,dateReceived)
@@ -741,6 +825,7 @@ router.post("/enquiry", async function (req, resp) {
       .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
+        mail(req.body.emailAddress);
       })
       .catch((err) => {
         resp.status(500).send({ message: `${err}` });
@@ -768,14 +853,14 @@ router.post("/commendation", async function (req, resp) {
   console.log(req.body.otherDetailsEnquiry);
   console.log(req.body.declaration);
 
-  console.log("fileuniquekey : " + fileuniquekey);
+  //console.log("fileuniquekey : " + fileuniquekey);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
       .then((pool) => {
         return pool.request().query(
           `DECLARE
-          @clientNumber bigint,
+          @clientNumber varchar(50),
           @clientName varchar(50),
           @IdNumber varchar(50),
           @phoneContact bigint,
@@ -809,7 +894,7 @@ router.post("/commendation", async function (req, resp) {
           set @CommendationReason='${req.body.commendationReason}';
           set @OfficeName='${req.body.commendationOfficeName}';
           set @OtherDetails='';
-          set @linkToFile ='${fileuniquekey}';
+          set @linkToFile ='1';
           set @declaration='${req.body.declaration}';
           
           INSERT INTO 
@@ -832,6 +917,8 @@ router.post("/commendation", async function (req, resp) {
             @idType);
           
           SET @CustomerDetailID = SCOPE_IDENTITY();
+
+          SELECT @CustomerDetailID as 'customerDetailID';
 
           SET @current_date_time =  CURRENT_TIMESTAMP;
           INSERT INTO T_Case(statusID,dateReceived)
@@ -867,6 +954,7 @@ router.post("/commendation", async function (req, resp) {
       .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
+        mail(req.body.emailAddress);
       })
       .catch((err) => {
         resp.status(500).send({ message: `${err}` });
@@ -875,7 +963,7 @@ router.post("/commendation", async function (req, resp) {
   } catch (e) {
     console.log(e);
   }
-  fileuniquekey = fileuniquekey + 1;
+  // fileuniquekey = fileuniquekey + 1;
 });
 
 router.post("/upload/:id", function (req, res) {
