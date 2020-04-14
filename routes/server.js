@@ -51,11 +51,11 @@ let transporter = nodemailer.createTransport({
 //   limits: { fileSize: 1000000 }
 // }).single("myImage");
 
-function mail(email) {
+function mail(email,caseID) {
   let mailOptions = {
-    from: '" Properties Request App " <ict-application-alerts@lta.com.fj> ',
+    from: '" Communication Request " <help@lta.com.fj> ',
     to: email, // list of receivers
-    subject: "Request ID : " + email, // Subject line
+    subject: "LTA Communication Registration - Case No : " + caseID, // Subject line
     //text: "Comment : " + POcomment // plain text body
     html: `<!DOCTYPE html>
       <html>
@@ -78,39 +78,30 @@ function mail(email) {
       }
       </style>
       </head>
-      <body>
-    <table>
-    <caption> <h2> Saved By Properties Officer </h2> </caption>
-    <tr>
-      <td>Request ID : </td>
-      <td>${email}</td>
-    </tr>
-    <tr>
-      <td>Request Type : </td>
-      <td>${email}</td>
-    </tr>
-    <tr>
-      <td>Branch : </td>
-      <td>${email}</td>
-    </tr>
-    <tr>
-      <td>Department </td>
-      <td>${email}</td>
-    </tr>
-    <tr>
-      <td>Team Leader : </td>
-      <td>${email}</td>
-    </tr>
-    <tr>
-      <td>Description : </td>
-      <td>${email}</td>
-      </tr>
-      <tr>
-      <td>Verification : </td>
-      <td>${email}</td>
-      </tr>
-    </table>
-      <p> Kindly access Properties Request App to action</p>
+      <p> Dear Customer,</p>
+
+      <p>Your Communication Request has been successfully registered with LTA. You will be notified on the progress of the complaint.</p>
+      
+      <p>Your Communication Case Number (CCN) is : ${caseID}</p>
+      
+      <p>For any other queries related to this request, please contact LTA refering your CCN through phone or email mentioned below.</p>
+      
+      <p>
+        1. Phone : +(679) 339 2166  <br/>
+        2. Email ID : contactus@lta.com.fj <br/>
+      </p>
+      
+      <p>
+      Thank you for using our service. Have a nice day.
+      </p>
+      <p>
+      Kind Regards,<br/>
+      Customer Service Team,<br/>
+      LTA, Fiji.<br/>
+      </p>
+      <p>
+      Note : This is an automatically generated email. Please do not reply to this.
+      </p>
     </body>
     </html>`, // html body
   };
@@ -123,6 +114,11 @@ function mail(email) {
     console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
   });
 }
+
+router.get("/mailtest", function (req, res, next) {
+  res.send("respond with a resource");
+  mail('siddhantanand23@gmail.com',12);
+});
 
 router.get("/district", async function (req, resp) {
   try {
@@ -376,7 +372,11 @@ router.get("/grievances", async function (req, resp) {
       .then((pool) => {
         return pool.request().query(`SELECT
         comm.CommunicationID
-         ,cd.CustomerNumber
+         --,cd.CustomerNumber
+		,CASE 
+			when cd.CustomerNumber='undefined' then ''
+			else cd.CustomerNumber
+		 end as CustomerNumber
          ,cd.CustomerName
          ,cd.PhoneContact
          ,cd.EmailAddress
@@ -446,8 +446,12 @@ router.get("/commendation", async function (req, resp) {
       .then((pool) => {
         return pool.request().query(`SELECT
         comm.CommendationID
-         ,cd.CustomerNumber
+         --,cd.CustomerNumber
          ,cd.CustomerName
+		 , CASE 
+			when cd.CustomerNumber='undefined' then ''
+			else cd.CustomerNumber
+		 end as CustomerNumber
          ,cd.PhoneContact
          ,cd.EmailAddress
          ,r.Region
@@ -510,7 +514,11 @@ router.get("/enquiries", async function (req, resp) {
       .then((pool) => {
         return pool.request().query(`SELECT 
         comm.QueryID,
-        cd.CustomerNumber, 
+        --cd.CustomerNumber,
+        CASE 
+          when cd.CustomerNumber='undefined' then ''
+          else cd.CustomerNumber
+        end as CustomerNumber ,
         cd.CustomerName, 
         cd.PhoneContact, 
         cd.EmailAddress,
@@ -525,7 +533,15 @@ router.get("/enquiries", async function (req, resp) {
         comm.linkToFile,
         comm.caseID,
 		    tc.statusID,
-      [to].username AS 'officerAssigned'
+      [to].username AS 'officerAssigned',
+	    CONVERT(VARCHAR, tc.dateReceived, 5) AS 'dateReceived'
+         ,CONVERT(VARCHAR, tc.dateopened, 5) AS 'dateopened'
+         ,CONVERT(VARCHAR, tc.dateAssigned, 5) AS 'dateAssigned'
+         ,CONVERT(VARCHAR, tc.dateClosed, 5) AS 'dateClosed'
+         ,tc.assignedTo
+         ,tc.receivedBy
+         ,tu.username AS 'openedBy'
+         ,tu1.username AS 'closedBy'
       ,cd.CustomerDetailID
         FROM T_Query comm 
         JOIN T_CustomerDetail cd ON cd.CustomerDetailID=comm.CustomerDetailID
@@ -535,7 +551,11 @@ router.get("/enquiries", async function (req, resp) {
         JOIN TM_CommunicationType comt ON comt.CommunicationTypeID=comm.CommunicationTypeID
         JOIN T_Case tc ON comm.caseID = tc.caseID
         JOIN TM_Status ts ON tc.statusID = ts.statusID
-		LEFT JOIN TM_Officers [to] ON tc.assignedTo = [to].officerID;`);
+		LEFT JOIN TM_Officers [to] ON tc.assignedTo = [to].officerID
+		LEFT JOIN T_User tu
+        ON tc.openedBy = tu.UserID
+      LEFT JOIN T_User tu1
+        ON tc.closedBy = tu1.UserID;`);
       })
       .then((result) => {
         let rows = result.recordset;
@@ -676,13 +696,15 @@ VALUES(@clientNumber, @clientName, @phoneContact, @emailAddress, @IDNumber, @reg
 
 SET @CustomerDetailID = SCOPE_IDENTITY();
 
-SELECT @CustomerDetailID as 'customerDetailID';
+--SELECT @CustomerDetailID as 'customerDetailID';
 
 SET @current_date_time =  CURRENT_TIMESTAMP;
 INSERT INTO T_Case(statusID,dateReceived)
 VALUES(1,@current_date_time)
 
 SET @caseID = SCOPE_IDENTITY();
+
+SELECT @caseID as 'caseID',@CustomerDetailID as 'customerDetailID';
 
 INSERT INTO 
 T_Communication (CustomerDetailID, 
@@ -713,9 +735,10 @@ VALUES(@CustomerDetailID,
       })
       .then((result) => {
         let rows = result.recordset;
-        console.log(result);
+        console.log(result.recordset);
+        var caseID = result.recordset.map(x => x.caseID)
         resp.status(200).json(result.recordset);
-        mail(req.body.emailAddress);
+        mail(req.body.emailAddress,caseID);
       })
       .catch((err) => {
         resp.status(500).send({ message: `${err}` });
@@ -798,13 +821,15 @@ router.post("/enquiry", async function (req, resp) {
           
           SET @CustomerDetailID = SCOPE_IDENTITY();
 
-          SELECT @CustomerDetailID as 'customerDetailID';
+          --SELECT @CustomerDetailID as 'customerDetailID';
           
           SET @current_date_time =  CURRENT_TIMESTAMP;
           INSERT INTO T_Case(statusID,dateReceived)
           VALUES(1,@current_date_time)
 
           SET @caseID = SCOPE_IDENTITY();
+
+          SELECT @CustomerDetailID as 'customerDetailID', @caseID as 'caseID';
           
           INSERT INTO 
           T_Query (CustomerDetailID,
@@ -825,7 +850,8 @@ router.post("/enquiry", async function (req, resp) {
       .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
-        mail(req.body.emailAddress);
+        var caseID = result.recordset.map(x => x.caseID)
+        mail(req.body.emailAddress,caseID);
       })
       .catch((err) => {
         resp.status(500).send({ message: `${err}` });
@@ -918,13 +944,15 @@ router.post("/commendation", async function (req, resp) {
           
           SET @CustomerDetailID = SCOPE_IDENTITY();
 
-          SELECT @CustomerDetailID as 'customerDetailID';
+          --SELECT @CustomerDetailID as 'customerDetailID';
 
           SET @current_date_time =  CURRENT_TIMESTAMP;
           INSERT INTO T_Case(statusID,dateReceived)
           VALUES(1,@current_date_time)
 
           SET @caseID = SCOPE_IDENTITY();
+
+          SELECT @CustomerDetailID as 'customerDetailID', @caseID as 'caseID';
           
           INSERT INTO 
           T_Commendation (CustomerDetailID,
@@ -954,7 +982,8 @@ router.post("/commendation", async function (req, resp) {
       .then((result) => {
         let rows = result.recordset;
         resp.status(200).json(rows);
-        mail(req.body.emailAddress);
+        var caseID = result.recordset.map(x => x.caseID)
+        mail(req.body.emailAddress,caseID);
       })
       .catch((err) => {
         resp.status(500).send({ message: `${err}` });
@@ -993,7 +1022,7 @@ router.post("/upload/:id", function (req, res) {
   console.log(" params id " + req.params.id);
 
   const DIR =
-    "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets";
+    "C:/Users/ICT.Siddhant/Desktop/CommForm/CommServer/assets";
 
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {

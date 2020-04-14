@@ -21,7 +21,7 @@ router.get("/images/:id", function (req, res, next) {
 
   var value = req.params.id + ".jpg";
   const directoryPath =
-    "C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets";
+    "C:/Users/ICT.Siddhant/Desktop/CommForm/CommServer/assets";
 
   fs.readdir(directoryPath, function (err, files) {
     if (err) {
@@ -44,7 +44,7 @@ router.get("/images/:id", function (req, res, next) {
       if (imageRay[i] === value) {
         console.log(i + " " + imageRay[i]);
         res.sendFile(
-          `C:/Users/Siddhant/Desktop/Land Transport Authority Work/CommServer/assets/${imageRay[i]}`
+          `C:/Users/ICT.Siddhant/Desktop/CommForm/CommServer/assets/${imageRay[i]}`
         );
       }
     }
