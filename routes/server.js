@@ -3,6 +3,7 @@ var router = express.Router();
 const path = require("path");
 const multer = require("multer");
 var nodemailer = require("nodemailer");
+const { check, validationResult } = require('express-validator');
 
 var bodyparser = require("body-parser");
 var mssql = require("mssql");
@@ -643,6 +644,8 @@ router.post("/grievance", async function (req, resp) {
   console.log(req.body.incidentDate);
   console.log(req.body.otherDetails);
   console.log(req.body.declaration);
+  const otherDetails = req.body.otherDetails.replace("'", "''");
+  console.log(otherDetails);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
@@ -652,7 +655,7 @@ router.post("/grievance", async function (req, resp) {
 @clientNumber varchar(50),
 @clientName varchar(50),
 @IdNumber varchar(50),
-@phoneContact bigint,
+@phoneContact varchar(50),
 @emailAddress varchar(50),
 @idType int,
 @region int,
@@ -672,7 +675,7 @@ router.post("/grievance", async function (req, resp) {
 @current_date_time DATETIME;
 
 SET @clientNumber='${req.body.clientNumber}';
-SET @clientName='${req.body.clientName}';
+SET @clientName='${req.body.clientName};
 set @IdNumber = '${req.body.IdNumber}';
 SET @phoneContact='${req.body.phoneContact}';
 SET @emailAddress='${req.body.emailAddress}';
@@ -682,12 +685,12 @@ SET @office = '${req.body.office}';
 SET @CommunicationTypeID = 1;
 SET @IncidentType = '${req.body.typeofIncident}';
 SET @IncidentTime = '${req.body.timeofIncident}';
-SET @IncidentArea = '${req.body.incidentArea}';
+SET @IncidentArea = '${req.body.incidentArea};
 set @SubCategoryID = '${req.body.SubCategory}';
 set @VehicleNumber = '${req.body.vehicleNumber}';
 set @DistrictID = '${req.body.region}';
 set @IncidentDate = '${req.body.incidentDate}';
-set @OtherDetails = '"${req.body.otherDetails}"';
+set @OtherDetails = '${otherDetails}';
 set @declaration = '${req.body.declaration}';
 
 
@@ -749,7 +752,8 @@ VALUES(@CustomerDetailID,
   }
 });
 
-router.post("/enquiry", async function (req, resp) {
+router.post("/enquiry", 
+async function (req, resp) {
   // var now = new Date();
   // var nowDate = now.toLocaleDateString("en-GB");
   // var nowTime = now.toLocaleTimeString("en-GB");
@@ -765,6 +769,8 @@ router.post("/enquiry", async function (req, resp) {
   console.log(req.body.dateOfEnquiry);
   console.log(req.body.otherDetailsEnquiry);
   console.log(req.body.declaration);
+  const otherDetailsEnquiry = req.body.otherDetailsEnquiry.replace("'", "''");
+  console.log(otherDetailsEnquiry);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
@@ -774,7 +780,7 @@ router.post("/enquiry", async function (req, resp) {
           @clientNumber varchar(50),
           @clientName varchar(50),
           @IdNumber varchar(50),
-          @phoneContact bigint,
+          @phoneContact varchar(50),
           @emailAddress varchar(50),
           @idType int,
           @region int,
@@ -782,7 +788,7 @@ router.post("/enquiry", async function (req, resp) {
           @CustomerDetailID bigint,
           @CommunicationTypeID int,
           @dateOfEnquiry date,
-          @otherDetailsEnquiry varchar(50),
+          @otherDetailsEnquiry varchar(max),
           @declaration int,
           @caseID INT,
           @current_date_time DATETIME;
@@ -797,7 +803,7 @@ router.post("/enquiry", async function (req, resp) {
           set @office='${req.body.office}';
           set @CommunicationTypeID='3';
           set @dateOfEnquiry='${req.body.dateOfEnquiry}';
-          set @otherDetailsEnquiry='${req.body.otherDetailsEnquiry}';
+          set @otherDetailsEnquiry='${otherDetailsEnquiry}';
           set @declaration='${req.body.declaration}';
           
           INSERT INTO 
@@ -878,7 +884,8 @@ router.post("/commendation", async function (req, resp) {
   console.log(req.body.dateOfEnquiry);
   console.log(req.body.otherDetailsEnquiry);
   console.log(req.body.declaration);
-
+  const commendationReason = req.body.commendationReason.replace("'", "''");
+  console.log(commendationReason);
   //console.log("fileuniquekey : " + fileuniquekey);
   try {
     await new mssql.ConnectionPool(config)
@@ -889,7 +896,7 @@ router.post("/commendation", async function (req, resp) {
           @clientNumber varchar(50),
           @clientName varchar(50),
           @IdNumber varchar(50),
-          @phoneContact bigint,
+          @phoneContact varchar(50),
           @emailAddress varchar(50),
           @idType int,
           @region int,
@@ -917,7 +924,7 @@ router.post("/commendation", async function (req, resp) {
           set @CommunicationTypeID='2';
           set @CommendationDate='${req.body.commendationDate}';
           set @StaffName='${req.body.commendationStaffName}';
-          set @CommendationReason='${req.body.commendationReason}';
+          set @CommendationReason='${commendationReason}';
           set @OfficeName='${req.body.commendationOfficeName}';
           set @OtherDetails='';
           set @linkToFile ='1';

@@ -4,6 +4,6 @@ var database = "Communications";
 // var server = "DESKTOP-6DOGOA2\\SIDSERVER";
 // var server = "PROGRAMMERICT";
 // var server = "STARKILLERBASE";
-var server = "COMMUNICATION\\COMMSERVER";
+var server = "COMFORM\\COMMSERVER";
 
 module.exports = { user, password, server, database };
