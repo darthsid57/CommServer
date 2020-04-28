@@ -52,7 +52,7 @@ let transporter = nodemailer.createTransport({
 //   limits: { fileSize: 1000000 }
 // }).single("myImage");
 
-function mail(email,caseID) {
+function mail(email, caseID, comType) {
   let mailOptions = {
     from: '" Communication Request " <help@lta.com.fj> ',
     to: email, // list of receivers
@@ -79,17 +79,17 @@ function mail(email,caseID) {
       }
       </style>
       </head>
-      <p> Dear Customer,</p>
+      <p>Dear Sir / Madam,</p>
 
-      <p>Your Communication Request has been successfully registered with LTA. You will be notified on the progress of the complaint.</p>
+      <p>Your ${comType} has been successfully registered with LTA.</p>
       
       <p>Your Communication Case Number (CCN) is : ${caseID}</p>
       
-      <p>For any other queries related to this request, please contact LTA refering your CCN through phone or email mentioned below.</p>
+      <p>For any other queries related to this request, please contact LTA referencing your CCN through phone or email mentioned below.</p>
       
       <p>
         1. Phone : +(679) 339 2166  <br/>
-        2. Email ID : contactus@lta.com.fj <br/>
+        2. Email ID : help@lta.com.fj <br/>
       </p>
       
       <p>
@@ -118,7 +118,7 @@ function mail(email,caseID) {
 
 router.get("/mailtest", function (req, res, next) {
   res.send("respond with a resource");
-  mail('siddhantanand23@gmail.com',12);
+  mail('siddhantanand23@gmail.com', 12);
 });
 
 router.get("/district", async function (req, resp) {
@@ -625,7 +625,7 @@ router.post("/grievance", async function (req, resp) {
   // var nowDate = now.toLocaleDateString("en-GB");
   // var nowTime = now.toLocaleTimeString("en-GB");
   // var json_date_created = now.toLocaleString("en-US");
-
+  var subcategory = 1;
   console.log(req.body.clientNumber);
   getClientNumber(req.body.clientNumber);
   console.log(req.body.clientName);
@@ -638,14 +638,15 @@ router.post("/grievance", async function (req, resp) {
   console.log(req.body.typeofIncident);
   console.log(req.body.timeofIncident);
   console.log(req.body.incidentArea);
-  console.log(req.body.SubCategory);
+  console.log(req.body.SubCategory + " Sub Category");
+  subcategory = req.body.SubCategory;
   console.log(req.body.vehicleNumber);
   console.log(req.body.region);
   console.log(req.body.incidentDate);
   console.log(req.body.otherDetails);
   console.log(req.body.declaration);
-  const otherDetails = req.body.otherDetails.replace("'", "''");
-  console.log(otherDetails);
+  const otherDetails2 = req.body.otherDetails.replace("'", "''");
+  console.log(otherDetails2);
   try {
     await new mssql.ConnectionPool(config)
       .connect()
@@ -666,7 +667,7 @@ router.post("/grievance", async function (req, resp) {
 @IncidentTime time,
 @IncidentArea varchar(50),
 @SubCategoryID int,
-@VehicleNumber varchar(6),
+@VehicleNumber varchar(10),
 @DistrictID int,
 @IncidentDate date,
 @OtherDetails varchar(50),
@@ -675,7 +676,7 @@ router.post("/grievance", async function (req, resp) {
 @current_date_time DATETIME;
 
 SET @clientNumber='${req.body.clientNumber}';
-SET @clientName='${req.body.clientName};
+SET @clientName='${req.body.clientName}';
 set @IdNumber = '${req.body.IdNumber}';
 SET @phoneContact='${req.body.phoneContact}';
 SET @emailAddress='${req.body.emailAddress}';
@@ -685,12 +686,12 @@ SET @office = '${req.body.office}';
 SET @CommunicationTypeID = 1;
 SET @IncidentType = '${req.body.typeofIncident}';
 SET @IncidentTime = '${req.body.timeofIncident}';
-SET @IncidentArea = '${req.body.incidentArea};
+SET @IncidentArea = '${req.body.incidentArea}';
 set @SubCategoryID = '${req.body.SubCategory}';
 set @VehicleNumber = '${req.body.vehicleNumber}';
 set @DistrictID = '${req.body.region}';
 set @IncidentDate = '${req.body.incidentDate}';
-set @OtherDetails = '${otherDetails}';
+set @OtherDetails = '${otherDetails2}';
 set @declaration = '${req.body.declaration}';
 
 
@@ -741,7 +742,7 @@ VALUES(@CustomerDetailID,
         console.log(result.recordset);
         var caseID = result.recordset.map(x => x.caseID)
         resp.status(200).json(result.recordset);
-        mail(req.body.emailAddress,caseID);
+        mail(req.body.emailAddress, caseID, "Grievance");
       })
       .catch((err) => {
         resp.status(500).send({ message: `${err}` });
@@ -752,31 +753,31 @@ VALUES(@CustomerDetailID,
   }
 });
 
-router.post("/enquiry", 
-async function (req, resp) {
-  // var now = new Date();
-  // var nowDate = now.toLocaleDateString("en-GB");
-  // var nowTime = now.toLocaleTimeString("en-GB");
-  // var json_date_created = now.toLocaleString("en-US");
-  console.log(req.body.clientNumber);
-  console.log(req.body.clientName);
-  console.log(req.body.IdNumber);
-  console.log(req.body.phoneContact);
-  console.log(req.body.emailAddress);
-  console.log(req.body.IdType);
-  console.log(req.body.region);
-  console.log(req.body.office);
-  console.log(req.body.dateOfEnquiry);
-  console.log(req.body.otherDetailsEnquiry);
-  console.log(req.body.declaration);
-  const otherDetailsEnquiry = req.body.otherDetailsEnquiry.replace("'", "''");
-  console.log(otherDetailsEnquiry);
-  try {
-    await new mssql.ConnectionPool(config)
-      .connect()
-      .then((pool) => {
-        return pool.request().query(
-          `DECLARE
+router.post("/enquiry",
+  async function (req, resp) {
+    // var now = new Date();
+    // var nowDate = now.toLocaleDateString("en-GB");
+    // var nowTime = now.toLocaleTimeString("en-GB");
+    // var json_date_created = now.toLocaleString("en-US");
+    console.log(req.body.clientNumber);
+    console.log(req.body.clientName);
+    console.log(req.body.IdNumber);
+    console.log(req.body.phoneContact);
+    console.log(req.body.emailAddress);
+    console.log(req.body.IdType);
+    console.log(req.body.region);
+    console.log(req.body.office);
+    console.log(req.body.dateOfEnquiry);
+    console.log(req.body.otherDetailsEnquiry);
+    console.log(req.body.declaration);
+    const otherDetailsEnquiry = req.body.otherDetailsEnquiry.replace("'", "''");
+    console.log(otherDetailsEnquiry);
+    try {
+      await new mssql.ConnectionPool(config)
+        .connect()
+        .then((pool) => {
+          return pool.request().query(
+            `DECLARE
           @clientNumber varchar(50),
           @clientName varchar(50),
           @IdNumber varchar(50),
@@ -851,22 +852,22 @@ async function (req, resp) {
             @otherDetailsEnquiry,
             @declaration,
             @caseID);`
-        );
-      })
-      .then((result) => {
-        let rows = result.recordset;
-        resp.status(200).json(rows);
-        var caseID = result.recordset.map(x => x.caseID)
-        mail(req.body.emailAddress,caseID);
-      })
-      .catch((err) => {
-        resp.status(500).send({ message: `${err}` });
-        console.log(err);
-      });
-  } catch (e) {
-    console.log(e);
-  }
-});
+          );
+        })
+        .then((result) => {
+          let rows = result.recordset;
+          resp.status(200).json(rows);
+          var caseID = result.recordset.map(x => x.caseID)
+          mail(req.body.emailAddress, caseID, "Enquiry");
+        })
+        .catch((err) => {
+          resp.status(500).send({ message: `${err}` });
+          console.log(err);
+        });
+    } catch (e) {
+      console.log(e);
+    }
+  });
 
 router.post("/commendation", async function (req, resp) {
   // var now = new Date();
@@ -990,7 +991,7 @@ router.post("/commendation", async function (req, resp) {
         let rows = result.recordset;
         resp.status(200).json(rows);
         var caseID = result.recordset.map(x => x.caseID)
-        mail(req.body.emailAddress,caseID);
+        mail(req.body.emailAddress, caseID, "Commendation");
       })
       .catch((err) => {
         resp.status(500).send({ message: `${err}` });
